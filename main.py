@@ -13,21 +13,37 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from config import get_config
 from simple_openai_client import SimpleOpenAIClient
+from strava_auth import get_strava_token
 import requests
 import json
 
 
-def get_strava_activities(config, limit=None):
-    """Get recent activities from Strava"""
+def get_strava_activities(config, limit=None, user_id=None):
+    """Get recent activities from Strava using OAuth or legacy token"""
     # Use config default if no limit specified
     if limit is None:
         limit = config.MAX_ACTIVITIES
-        
-    if not config.STRAVA_TOKEN:
-        print("❌ Strava token not configured. Please set STRAVA_TOKEN in .env file.")
+    
+    # Require OAuth authentication with user_id
+    if not user_id:
+        print("❌ User ID required for Strava OAuth authentication")
+        print("💡 Use --user <user_id> parameter or setup new user with --oauth-setup <user_id>")
         return []
     
-    headers = {"Authorization": f"Bearer {config.STRAVA_TOKEN}"}
+    if not config.has_oauth_config():
+        print("❌ Strava OAuth not configured")
+        print("💡 Please set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in .env")
+        return []
+    
+    try:
+        strava_token = get_strava_token(config, user_id)
+        print(f"🔐 Using OAuth authentication for user: {user_id}")
+    except Exception as e:
+        print(f"❌ OAuth authentication failed: {e}")
+        print(f"💡 Try setting up OAuth: python main.py --oauth-setup {user_id}")
+        return []
+    
+    headers = {"Authorization": f"Bearer {strava_token}"}
     params = {"per_page": limit}
     proxies = config.get_proxies()
     
@@ -63,12 +79,8 @@ def analyze_workout(config, activities, feedback=""):
             config.OPENAI_BASE_URL
         )
         
-        activity = activities[0] if activities else {}
-        
-        if feedback.strip():
-            return ai_client.analyze_workout_with_feedback(activity, feedback)
-        else:
-            return ai_client.analyze_workout_data(activity)
+        # Analyze all activities with optional feedback
+        return ai_client.analyze_workout_with_feedback(activities, feedback)
             
     except Exception as e:
         return f"❌ Error with AI analysis: {e}"
@@ -80,6 +92,9 @@ def main():
     parser.add_argument('--config-check', action='store_true', help='Check configuration only')
     parser.add_argument('--feedback', type=str, help='Add runner feedback for analysis')
     parser.add_argument('--limit', type=int, default=None, help='Number of activities to fetch (default from MAX_ACTIVITIES in .env)')
+    parser.add_argument('--user', type=str, help='User ID for OAuth authentication (required for analysis, e.g., boris_ryashko)')
+    parser.add_argument('--oauth-setup', type=str, help='Setup OAuth for new user (provide user ID)')
+    parser.add_argument('--list-users', action='store_true', help='List authenticated users')
     
     args = parser.parse_args()
     
@@ -94,6 +109,33 @@ def main():
         print("\n✅ Configuration check complete!")
         return
     
+    # Handle OAuth-specific commands
+    if args.list_users:
+        from strava_auth import StravaAuthManager
+        auth_manager = StravaAuthManager(config)
+        users = auth_manager.list_authenticated_users()
+        
+        print("\n👥 Authenticated Users:")
+        print("=" * 40)
+        if users:
+            for user in users:
+                status = "✅ Valid" if user.get('is_valid') else "❌ Expired"
+                print(f"• {user.get('user_id', 'Unknown')} - {user.get('athlete_name', 'Unknown')} ({status})")
+        else:
+            print("No authenticated users found.")
+            print("💡 Use --oauth-setup <user_id> to authenticate a new user")
+        return
+    
+    if args.oauth_setup:
+        from strava_auth import setup_new_user
+        print(f"\n🔐 Setting up OAuth for new user: {args.oauth_setup}")
+        try:
+            setup_new_user(config, args.oauth_setup)
+            print(f"✅ OAuth setup completed for {args.oauth_setup}")
+        except Exception as e:
+            print(f"❌ OAuth setup failed: {e}")
+        return
+    
     # Validate configuration
     is_valid, missing_keys = config.validate_keys()
     if not is_valid:
@@ -102,6 +144,15 @@ def main():
         print("1. Copy .env.template to .env")
         print("2. Edit .env with your actual API keys")
         print("3. Run: python main.py --config-check")
+        return
+    
+    # Require user_id for analysis
+    if not args.user:
+        print("\n❌ User ID is required for analysis")
+        print("\n💡 Usage:")
+        print("  • First time: python main.py --oauth-setup <user_id>")
+        print("  • Analysis:   python main.py --user <user_id>")
+        print("  • List users: python main.py --list-users")
         return
     
     # Ask user for number of activities or use provided/default value
@@ -118,8 +169,16 @@ def main():
     else:
         print(f"\n📱 Using specified limit: {args.limit} activities")
     
+    # Get user ID for OAuth
+    user_id = args.user
+    if not user_id and config.has_oauth_config():
+        # Ask for user ID if OAuth is configured but no user specified
+        user_id = input("\n👤 Enter user ID for OAuth authentication (or press Enter for legacy token): ").strip()
+        if not user_id:
+            user_id = None
+    
     print(f"\n📱 Fetching your recent {args.limit} activities...")
-    activities = get_strava_activities(config, args.limit)
+    activities = get_strava_activities(config, args.limit, user_id)
     
     if not activities:
         print("❌ No activities found.")
@@ -133,7 +192,7 @@ def main():
         date = activity.get('start_date_local', '')[:10]
         print(f"   {i}. {name} ({activity_type}) - {distance_km:.1f}km on {date}")
     
-    print(f"\n🧠 AI ANALYSIS OF LATEST ACTIVITY")
+    print(f"\n🧠 AI ANALYSIS OF ALL {len(activities)} ACTIVITIES")
     print("=" * 60)
     
     # Get feedback if not provided via command line
@@ -155,10 +214,7 @@ def main():
     analysis = analyze_workout(config, activities, feedback)
     print(f"\n{analysis}")
     
-    print(f"\n🎯 Next Steps:")
-    print("• Run with different feedback: python main.py --feedback 'your thoughts'")
-    print("• Check more activities: python main.py --limit 5")
-    print("• Try examples: python examples/secure_demo.py")
+    
 
 
 if __name__ == "__main__":

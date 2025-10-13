@@ -17,8 +17,12 @@ class Config:
         """Load configuration from environment variables"""
         
         # Strava Configuration
-        self.STRAVA_TOKEN = os.getenv('STRAVA_TOKEN')
         self.STRAVA_BASE_URL = os.getenv('STRAVA_BASE_URL', 'https://www.strava.com/api/v3')
+        
+        # Strava OAuth Configuration
+        self.STRAVA_CLIENT_ID = os.getenv('STRAVA_CLIENT_ID')
+        self.STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
+        self.STRAVA_REDIRECT_URI = os.getenv('STRAVA_REDIRECT_URI', 'http://localhost:8080/callback')
         
         # OpenAI Configuration
         self.OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -50,8 +54,9 @@ class Config:
         """Validate that required API keys are present"""
         missing_keys = []
         
-        if not self.STRAVA_TOKEN:
-            missing_keys.append("STRAVA_TOKEN")
+        # Require OAuth credentials (no more legacy token support)
+        if not (self.STRAVA_CLIENT_ID and self.STRAVA_CLIENT_SECRET):
+            missing_keys.append("STRAVA_CLIENT_ID + STRAVA_CLIENT_SECRET")
         
         if not self.OPENAI_API_KEY:
             missing_keys.append("OPENAI_API_KEY")
@@ -59,17 +64,22 @@ class Config:
         is_valid = len(missing_keys) == 0
         return is_valid, missing_keys
     
+    def has_oauth_config(self) -> bool:
+        """Check if OAuth configuration is available"""
+        return bool(self.STRAVA_CLIENT_ID and self.STRAVA_CLIENT_SECRET)
+    
     def print_status(self):
         """Print configuration status (without exposing keys)"""
         print("🔧 AI Coach Configuration Status")
         print("=" * 40)
         
-        # Check Strava
-        if self.STRAVA_TOKEN:
-            token_preview = f"{self.STRAVA_TOKEN[:8]}...{self.STRAVA_TOKEN[-4:]}"
-            print(f"✅ Strava Token: {token_preview}")
+        # Check Strava OAuth configuration
+        if self.has_oauth_config():
+            print(f"✅ Strava OAuth: Client ID {self.STRAVA_CLIENT_ID}")
+            print("✅ Strava OAuth: Client Secret configured")
         else:
-            print("❌ Strava Token: Not set")
+            print("❌ Strava OAuth: Not configured")
+            print("💡 Please set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in .env")
         
         # Check OpenAI
         if self.OPENAI_API_KEY:

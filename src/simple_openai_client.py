@@ -30,47 +30,64 @@ class SimpleOpenAIClient:
             "Content-Type": "application/json"
         }
     
-    def analyze_workout_data(self, workout_data: Dict) -> str:
-        """
-        Analyze workout data from Strava and provide AI-powered insights.
-        
-        Args:
-            workout_data (Dict): Workout data from Strava API
-            
-        Returns:
-            str: AI analysis and recommendations
-        """
-        prompt = f"""
-        As an AI fitness coach, analyze this workout data and provide insights:
-        
-        Workout Data:
-        {json.dumps(workout_data, indent=2)}
-        
-        Please provide:
-        1. Performance analysis
-        2. Areas for improvement
-        3. Training recommendations
-        4. Recovery suggestions
-        5. Am I on a right way for Dresden half on October 26th?
 
-        
-        Keep the response concise and actionable.
-        """
-        
-        return self._chat_completion(prompt)
-    
-    def analyze_workout_with_feedback(self, workout_data: Dict, runner_feedback: str) -> str:
+    def analyze_workout_with_feedback(self, workout_data, runner_feedback: str) -> str:
         """
         Analyze workout data with additional runner feedback and insights.
         
         Args:
-            workout_data (Dict): Workout data from Strava API
+            workout_data: Single workout (Dict) or multiple workouts (List[Dict]) from Strava API
             runner_feedback (str): Additional feedback/notes from the runner
             
         Returns:
             str: AI analysis incorporating runner feedback
         """
-        prompt = f"""
+        # Handle both single activity and multiple activities
+        if isinstance(workout_data, list):
+            if not workout_data:
+                return "❌ No workout data available for analysis."
+            
+            if runner_feedback.strip():
+                prompt = f"""
+        As an AI fitness coach, analyze these {len(workout_data)} recent workouts along with the runner's personal feedback:
+        
+        WORKOUT DATA:
+        {json.dumps(workout_data, indent=2)}
+        
+        Runner's Feedback about recent training:
+        "{runner_feedback}"
+        
+        Please provide a comprehensive analysis that incorporates both the objective data and the runner's subjective experience:
+        1. Overall performance analysis across all activities (considering both data and feedback)
+        2. How the runner's feelings align with the objective training patterns
+        3. Training progression and consistency analysis
+        4. Alignment of subjective experience with objective metrics
+        5. Progress towards Dresden half marathon on October 26th
+        6. Propose a detailed Training Plan for the next 2 weeks before the race
+        
+        Keep the response comprehensive, personal, and encouraging.
+        """
+            else:
+                prompt = f"""
+        As an AI fitness coach, analyze these {len(workout_data)} recent workouts and provide comprehensive insights:
+        
+        WORKOUT DATA:
+        {json.dumps(workout_data, indent=2)}
+        
+        Please provide:
+        1. Overall training pattern analysis across all activities
+        2. Performance trends and progression
+        3. Training balance (intensity, volume, recovery)
+        4. Areas for improvement based on the pattern
+        5. Specific recommendations for upcoming Dresden half marathon on October 26th
+        6. Training plan adjustments based on recent performance
+        
+        Keep the response comprehensive but actionable.
+        """
+        else:
+            # Single activity analysis (backward compatibility)
+            if runner_feedback.strip():
+                prompt = f"""
         As an AI fitness coach, analyze this workout data along with the runner's personal feedback:
         
         Workout Data:
@@ -82,11 +99,27 @@ class SimpleOpenAIClient:
         Please provide a comprehensive analysis that incorporates both the objective data and the runner's subjective experience:
         1. Performance analysis (considering both data and feedback)
         2. How the runner's feelings align with the objective metrics
-
+        3. Areas for improvement based on feedback alignment
         4. Progress towards Dresden half marathon on October 26th
         5. Propose a real Training Plan for the next 2 week before the race
         
         Keep the response personal, actionable, and encouraging.
+        """
+            else:
+                prompt = f"""
+        As an AI fitness coach, analyze this workout data and provide insights:
+        
+        Workout Data:
+        {json.dumps(workout_data, indent=2)}
+        
+        Please provide:
+        1. Performance analysis
+        2. Areas for improvement
+        3. Training recommendations
+        4. Recovery suggestions
+        5. Am I on a right way for Dresden half on October 26th?
+        
+        Keep the response concise and actionable.
         """
         
         # Build the messages array for context and tone
