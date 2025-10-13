@@ -5,7 +5,7 @@ Combines Strava API data with OpenAI analysis for intelligent coaching insights.
 
 import requests
 import json
-from openai_client import OpenAIClient
+from .openai_client import OpenAIClient
 
 class AICoach:
     """

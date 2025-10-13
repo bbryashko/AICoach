@@ -4,9 +4,15 @@ Simple test to check if OpenAI credits are working
 
 import requests
 import json
+import os
 
-# Your API key
-OPENAI_API_KEY = "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"
+# Load API key from environment variable for security
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+if not OPENAI_API_KEY:
+    print("❌ OPENAI_API_KEY environment variable not set!")
+    print("Please set your API key in the .env file or as an environment variable.")
+    exit(1)
 
 def test_openai_simple():
     """Test with a very simple, low-cost request"""

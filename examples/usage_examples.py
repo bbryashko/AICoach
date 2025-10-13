@@ -4,6 +4,10 @@ This script demonstrates practical usage of the OpenAI and AICoach integration c
 """
 
 import json
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 from openai_client import OpenAIClient
 from ai_coach_integration import AICoach
 

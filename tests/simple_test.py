@@ -1,7 +1,13 @@
 import requests
+import os
 
-# Test with your API key
-api_key = "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"
+# Load API key from environment variable for security
+api_key = os.getenv('OPENAI_API_KEY')
+
+if not api_key:
+    print("❌ OPENAI_API_KEY environment variable not set!")
+    print("Please set your API key in the .env file or as an environment variable.")
+    exit(1)
 
 headers = {
     "Authorization": f"Bearer {api_key}",

@@ -4,6 +4,10 @@ Secure AI Coach Demo - Uses environment variables for API keys
 
 import requests
 import json
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 from simple_openai_client import SimpleOpenAIClient
 from config import get_config
 

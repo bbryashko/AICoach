@@ -98,7 +98,9 @@ def load_env_file(file_path: str = ".env"):
     Load environment variables from a .env file
     This is a simple implementation - for production, use python-dotenv
     """
-    env_path = os.path.join(os.path.dirname(__file__), file_path)
+    # Look for .env file in project root (parent directory of src)
+    project_root = os.path.dirname(os.path.dirname(__file__))
+    env_path = os.path.join(project_root, file_path)
     
     if not os.path.exists(env_path):
         return False
