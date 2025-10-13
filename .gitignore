@@ -50,3 +50,13 @@ Thumbs.db
 
 # Certificates (if they contain sensitive data)
 certs/
+
+# Sensitive Configuration Files
+.env
+config_local.py
+secrets.json
+api_keys.txt
+
+# Backup files with potential secrets
+*.backup
+*.bak

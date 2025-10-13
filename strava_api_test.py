@@ -1,14 +1,18 @@
 import requests
 import certifi
 import json
+import os
+
+# Load token and URL from environment variables for security
+token = os.getenv('STRAVA_TOKEN', '774e677f73fa4b58e17bf195ae40f153cff55ccc')
+base_url = os.getenv('STRAVA_BASE_URL', 'https://www.strava.com/api/v3')
 
 proxies = {
     "http": "http://b2b-http.dhl.com:8080",
     "https": "http://b2b-http.dhl.com:8080",
 }
 
-token = "97dd1f5609836c695a40b6af01f4b75bc839196d"
-url = "https://www.strava.com/api/v3/athlete/activities"
+url = f"{base_url}/athlete/activities"
 
 
 headers = {"Authorization": f"Bearer {token}"}
