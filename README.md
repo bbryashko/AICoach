@@ -20,16 +20,17 @@ AICoach/
 │   └── usage_examples.py         # Comprehensive usage examples
 ├── tests/                        # Test files
 │   ├── __init__.py
+│   ├── strava_api_test.py        # Original Strava API test
 │   ├── test_openai.py            # OpenAI client tests
 │   ├── test_correct_openai.py    # OpenAI syntax tests
 │   ├── test_openai_credits.py    # OpenAI credit tests
 │   ├── simple_test.py            # Simple API tests
 │   └── token_helper.py           # Strava token helper
 ├── certs/                        # SSL certificates
+├── main.py                       # Main application entry point
 ├── .env.template                 # Environment variables template
 ├── .gitignore                    # Git ignore rules
 ├── requirements.txt              # Python dependencies
-├── strava_api_test.py           # Original Strava API test
 └── README.md                    # This file
 ```
 
@@ -155,14 +156,20 @@ recovery = coach.get_recovery_recommendations()
 
 Run tests from the project root:
 ```bash
+# Test original Strava API integration
+python tests/strava_api_test.py
+
 # Test OpenAI integration
 python tests/test_openai.py
 
-# Test Strava token
+# Test Strava token validation
 python tests/token_helper.py
 
 # Test API credits
 python tests/test_openai_credits.py
+
+# Test simple API calls
+python tests/simple_test.py
 ```
 
 ## 🔒 Security Best Practices

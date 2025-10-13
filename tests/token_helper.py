@@ -5,6 +5,7 @@ This script helps you get and test Strava API tokens properly.
 
 import requests
 import json
+import os
 from datetime import datetime
 
 def test_token(token):
@@ -106,8 +107,14 @@ def main():
     print("🤖 STRAVA TOKEN HELPER")
     print("=" * 30)
     
-    # Test current token
-    current_token = "0d1b3b9104bd60ff5fecdc520f662e011a71588b"
+    # Test current token from environment
+    current_token = os.getenv('STRAVA_TOKEN')
+    if not current_token:
+        print("❌ No STRAVA_TOKEN environment variable set!")
+        print("Please configure your token in .env file first.")
+        show_token_guide()
+        return
+        
     print(f"🔍 Testing current token: {current_token[:10]}...")
     
     if test_token(current_token):
