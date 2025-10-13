@@ -89,132 +89,68 @@ class SimpleOpenAIClient:
         Keep the response personal, actionable, and encouraging.
         """
         
-        return self._chat_completion(prompt)
+        # Build the messages array for context and tone
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an experienced running coach specializing in half-marathon preparation. "
+                    "You create personalized, structured, and actionable training guidance. "
+                    "Your tone is supportive, motivational, and data-driven. "
+                    "You adapt the plan based on fatigue, terrain, and feedback."
+                )
+            },
+            {"role": "user", "content": prompt}
+        ]
+
+        # Call your chat completion method with improved parameters
+        return self._chat_completion(
+            messages=messages,
+            model=self.model,      # Explicitly pass the model from .env
+            temperature=0.7,       # balance of structure and creativity
+            max_tokens=2000        # ensures full plan fits comfortably
+        )
     
-    def generate_training_plan(self, athlete_profile: Dict, goals: str) -> str:
-        """
-        Generate a personalized training plan based on athlete profile and goals.
-        
-        Args:
-            athlete_profile (Dict): Athlete's profile data
-            goals (str): Training goals
-            
-        Returns:
-            str: Personalized training plan
-        """
-        prompt = f"""
-        Create a personalized training plan for this athlete:
-        
-        Athlete Profile:
-        {json.dumps(athlete_profile, indent=2)}
-        
-        Goals: {goals}
-        
-        Please provide:
-        1. Weekly training structure
-        2. Specific workout types
-        3. Progressive overload strategy
-        4. Recovery recommendations
-        5. Key metrics to track
-        """
-        
-        return self._chat_completion(prompt)
+   
     
-    def nutrition_recommendations(self, workout_data: Dict, athlete_profile: Dict) -> str:
-        """
-        Get nutrition recommendations based on workout intensity and athlete profile.
-        
-        Args:
-            workout_data (Dict): Recent workout data
-            athlete_profile (Dict): Athlete's profile
-            
-        Returns:
-            str: Nutrition recommendations
-        """
-        prompt = f"""
-        As a sports nutritionist, provide nutrition recommendations:
-        
-        Recent Workout:
-        {json.dumps(workout_data, indent=2)}
-        
-        Athlete Profile:
-        {json.dumps(athlete_profile, indent=2)}
-        
-        Please provide:
-        1. Pre-workout nutrition
-        2. During workout fueling (if applicable)
-        3. Post-workout recovery nutrition
-        4. General daily nutrition guidelines
-        """
-        
-        return self._chat_completion(prompt)
-    
-    def motivational_message(self, recent_performance: Dict, goals: str) -> str:
-        """
-        Generate a motivational message based on recent performance.
-        
-        Args:
-            recent_performance (Dict): Recent workout performance
-            goals (str): Athlete's goals
-            
-        Returns:
-            str: Motivational message
-        """
-        prompt = f"""
-        Create a motivational message for this athlete:
-        
-        Recent Performance:
-        {json.dumps(recent_performance, indent=2)}
-        
-        Goals: {goals}
-        
-        Provide an encouraging, personalized message that:
-        1. Acknowledges their effort
-        2. Highlights progress
-        3. Motivates towards their goals
-        4. Includes actionable next steps
-        """
-        
-        return self._chat_completion(prompt)
-    
-    def custom_query(self, query: str, context: Optional[str] = None) -> str:
-        """
-        Make a custom query to OpenAI with optional context.
-        
-        Args:
-            query (str): The question or request
-            context (str, optional): Additional context for the query
-            
-        Returns:
-            str: AI response
-        """
-        prompt = query
-        if context:
-            prompt = f"Context: {context}\n\nQuery: {query}"
-        
-        return self._chat_completion(prompt)
-    
-    def _chat_completion(self, prompt: str, max_tokens: int = 1000) -> str:
+   
+    def _chat_completion(self, prompt: str = None, max_tokens: int = 1000, messages: list = None, model: str = None, temperature: float = None) -> str:
         """
         Internal method to make chat completion requests using direct HTTP.
         
         Args:
-            prompt (str): The prompt to send to OpenAI
+            prompt (str, optional): The prompt to send to OpenAI (for simple calls)
             max_tokens (int): Maximum tokens in response
+            messages (list, optional): Messages array for advanced calls
+            model (str, optional): Override the default model
+            temperature (float, optional): Override the default temperature
             
         Returns:
             str: AI response
         """
         try:
-            # Prepare the request payload
-            payload = {
-                "model": self.model,
-                "messages": [
+            # Use provided model or fall back to instance model
+            request_model = model if model else self.model
+            # Use provided temperature or default
+            request_temperature = temperature if temperature is not None else 0.7
+            
+            # Build messages array - either from provided messages or from prompt
+            if messages:
+                request_messages = messages
+            elif prompt:
+                request_messages = [
                     {"role": "system", "content": "You are an expert AI fitness coach and sports scientist."},
                     {"role": "user", "content": prompt}
-                ],
+                ]
+            else:
+                raise ValueError("Either 'prompt' or 'messages' must be provided")
+            
+            # Prepare the request payload
+            payload = {
+                "model": request_model,
+                "messages": request_messages,
                 "max_tokens": max_tokens,
-                "temperature": 0.7
+                "temperature": request_temperature
             }
             
             # Make the HTTP request to OpenAI API

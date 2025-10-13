@@ -17,8 +17,12 @@ import requests
 import json
 
 
-def get_strava_activities(config, limit=3):
+def get_strava_activities(config, limit=None):
     """Get recent activities from Strava"""
+    # Use config default if no limit specified
+    if limit is None:
+        limit = config.MAX_ACTIVITIES
+        
     if not config.STRAVA_TOKEN:
         print("❌ Strava token not configured. Please set STRAVA_TOKEN in .env file.")
         return []
@@ -75,7 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description="AI Coach - Strava + OpenAI Integration")
     parser.add_argument('--config-check', action='store_true', help='Check configuration only')
     parser.add_argument('--feedback', type=str, help='Add runner feedback for analysis')
-    parser.add_argument('--limit', type=int, default=3, help='Number of activities to fetch')
+    parser.add_argument('--limit', type=int, default=None, help='Number of activities to fetch (default from MAX_ACTIVITIES in .env)')
     
     args = parser.parse_args()
     
@@ -99,6 +103,20 @@ def main():
         print("2. Edit .env with your actual API keys")
         print("3. Run: python main.py --config-check")
         return
+    
+    # Ask user for number of activities or use provided/default value
+    if args.limit is None:
+        try:
+            user_input = input(f"\n📱 How many recent activities to analyze? (default: {config.MAX_ACTIVITIES}): ").strip()
+            if user_input:
+                args.limit = int(user_input)
+            else:
+                args.limit = config.MAX_ACTIVITIES
+        except (ValueError, KeyboardInterrupt):
+            print(f"\nUsing default: {config.MAX_ACTIVITIES} activities")
+            args.limit = config.MAX_ACTIVITIES
+    else:
+        print(f"\n📱 Using specified limit: {args.limit} activities")
     
     print(f"\n📱 Fetching your recent {args.limit} activities...")
     activities = get_strava_activities(config, args.limit)
