@@ -1,0 +1,4 @@
+# Keep OAuth tokens private - contains sensitive access/refresh tokens
+# SECURITY: Never commit these files - they contain personal authentication data
+tokens/
+*.json

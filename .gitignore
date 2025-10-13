@@ -57,6 +57,10 @@ config_local.py
 secrets.json
 api_keys.txt
 
+# OAuth tokens (contains sensitive access/refresh tokens)
+data/tokens/
+*_strava.json
+
 # Backup files with potential secrets
 *.backup
 *.bak
