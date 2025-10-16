@@ -202,6 +202,24 @@ class SimpleOpenAIClient:
                 
         except Exception as e:
             return f"Error communicating with OpenAI: {str(e)}"
+    
+    def _chat_completion_with_messages(self, messages: list, max_tokens: int = 1000, temperature: float = 0.7) -> str:
+        """
+        Chat completion specifically for chat sessions with custom message history.
+        
+        Args:
+            messages (list): Array of message dictionaries with 'role' and 'content'
+            max_tokens (int): Maximum tokens in response
+            temperature (float): Response creativity (0.0 to 1.0)
+            
+        Returns:
+            str: AI response
+        """
+        return self._chat_completion(
+            messages=messages, 
+            max_tokens=max_tokens, 
+            temperature=temperature
+        )
 
 
 # Example usage
