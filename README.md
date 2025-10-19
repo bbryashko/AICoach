@@ -2,7 +2,7 @@
 
 An intelligent fitness coach that combines Strava workout data with AI analysis to provide personalized training insights, recommendations, and coaching advice.
 
-## 🏗️ Project Structure
+## 🏗️ Project Structure here
 
 ```
 AICoach/
